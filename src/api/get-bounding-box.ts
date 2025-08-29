@@ -3,8 +3,7 @@
  *
  * This Lambda function is triggered by API Gateway to get locations of interest within a specified bounding box.
  * This is used to display items on the map view
- * It uses the sparsely populated Global Secondary Index (GSI) of DynamoDB, which has a lower precision geohash
- * to efficiently query items that fall within the bounding box.
+ * It use the most efficient index from the DynamoDB table, based on the size of the bounding box.
  *
  * This software is licensed under the Apache License, Version 2.0 (the "License");
  */
@@ -13,11 +12,11 @@ import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient } from '@aws-sdk/lib-dynamodb';
 import {
   logger,
-  RETURN_HEADERS,
   BoundingBox,
   getBoundingBoxGeoHashes,
   calculateGeoHashPrecision,
   fetchGeoHashItemsFromDynamoDB,
+  RETURN_HEADERS,
 } from '../shared';
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 
@@ -44,6 +43,11 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     };
   }
 
+  // Get the query limit from the payload or the default from the environment variable
+  const queryLimit = event.queryStringParameters?.limit
+    ? parseInt(event.queryStringParameters?.limit)
+    : MAXIMUM_DYNAMODB_RECORDS;
+
   // Setup the bounding box object
   const boundingBox: BoundingBox = {
     latMin: event.queryStringParameters?.latMin ? parseFloat(event.queryStringParameters?.latMin) : 0,
@@ -63,22 +67,26 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
   logger.info('Geohash Prefixes intercepting the bounding box', { count: hashPrefixes.length });
 
   // Step 3: Query DynamoDB for each geohash prefix
-  const results = await fetchGeoHashItemsFromDynamoDB(ddb, hashPrefixes, geospatialConfig);
+  const results = await fetchGeoHashItemsFromDynamoDB(ddb, hashPrefixes, geospatialConfig, queryLimit);
   logger.info('Queried Results from GeoHashes', { count: results.length });
 
   // Step 4: Filter results to ensure they are within the bounding box
-  const filteredResults = results.filter((item) => {
-    return (
-      item.lat >= boundingBox.latMin! &&
-      item.lat <= boundingBox.latMax! &&
-      item.lon >= boundingBox.lonMin! &&
-      item.lon <= boundingBox.lonMax!
-    );
-  });
+  const filteredResults = results
+    .filter((item) => {
+      return (
+        item.lat >= boundingBox.latMin! &&
+        item.lat <= boundingBox.latMax! &&
+        item.lon >= boundingBox.lonMin! &&
+        item.lon <= boundingBox.lonMax!
+      );
+    })
+    // Remove attributes that are not required in the payload response
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    .map(({ PK, SK, GSI1PK, GSI1SK, ttl, ...rest }) => rest);
   logger.info('Filtered Results within Bounding Box', { count: filteredResults.length });
 
-  // Step 5: Only return up to the MAXIMUM_DYNAMODB_RECORDS number of records
-  const returnRecords = filteredResults.slice(0, MAXIMUM_DYNAMODB_RECORDS);
+  // Step 5: Only return up to the queryLimit number of records
+  const returnRecords = filteredResults.slice(0, queryLimit);
 
   return {
     body: JSON.stringify({

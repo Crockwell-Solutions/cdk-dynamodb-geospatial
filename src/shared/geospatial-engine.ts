@@ -1,13 +1,13 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 /*
- * Route Engine Module
+ * Geospatial Engine Module
  *
- * This module is responsible for processing and optimising geospatial routes.
- * It utilizes geospatial data and algorithms to find the most efficient paths,
- * taking into account various constraints and environmental factors.
+ * This module is responsible for processing geospatial data and performing queries
+ * on DynamoDB using appropriate indexing strategies.
  *
  * This software is licensed under the Apache License, Version 2.0 (the "License");
  */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import * as geohash from 'ngeohash';
 import { GeospatialConfig, GEOSPATIAL_QUERIES } from '../../config/geospatial-config';
@@ -19,7 +19,6 @@ const SPATIAL_DATA_TABLE = process.env.SPATIAL_DATA_TABLE;
 const PARTITION_KEY_HASH_PRECISION = parseInt(process.env.PARTITION_KEY_HASH_PRECISION || '1');
 const PARTITION_KEY_SHARDS = parseInt(process.env.PARTITION_KEY_SHARDS || '10');
 const GSI_HASH_PRECISION = parseInt(process.env.GSI_HASH_PRECISION || '4');
-const MAXIMUM_DYNAMODB_RECORDS = parseInt(process.env.MAXIMUM_DYNAMODB_RECORDS || '100');
 
 export type Point = { lat: number; lon: number };
 export type BoundingBox = { latMin: number; lonMin: number; latMax: number; lonMax: number };
@@ -213,11 +212,12 @@ export async function fetchGeoHashItemsFromDynamoDB(
   ddb: DynamoDBDocumentClient,
   geoHashes: string[],
   geospatialConfig: GeospatialConfig,
+  queryLimit: number,
 ): Promise<any[]> {
   const results: any[] = [];
   // Calculate the fetch limit based on the number of hashes and the total fetch limit
-  const fetchLimit = Math.max(Math.ceil((MAXIMUM_DYNAMODB_RECORDS / geoHashes.length) * 2), 10);
-  // Process in chunks of 50
+  const fetchLimit = Math.max(Math.ceil((queryLimit / geoHashes.length) * 2), 10);
+  // Process the DynamoDB queries in parallel in chunks of 50
   const chunks = chunkArray(geoHashes, 50);
   for (const chunk of chunks) {
     await Promise.all(
@@ -242,23 +242,25 @@ export async function fetchGeoHashItemsFromDynamoDB(
  * @param ddb - The DynamoDBDocumentClient instance used to execute the query.
  * @param geoHash - The geohash string used as the partition key for the query.
  * @param geospatialConfig - The geospatial configuration that includes the index and hash precision.
- * @param fetchLimit - The maximum number of items to fetch in total (default is `MAXIMUM_DYNAMODB_RECORDS`).
+ * @param queryLimit - The maximum number of items to fetch in total (default is `MAXIMUM_DYNAMODB_RECORDS`).
  * @returns A promise that resolves to an array of items retrieved from the DynamoDB table.
  */
 export async function performGeospatialQueryCommand(
   ddb: DynamoDBDocumentClient,
   geoHash: string,
   geospatialConfig: GeospatialConfig,
-  fetchLimit: number = MAXIMUM_DYNAMODB_RECORDS,
+  queryLimit: number,
 ): Promise<any[]> {
   const returnData: any[] = [];
 
   const queryInput: any = {
     TableName: SPATIAL_DATA_TABLE,
-    Limit: fetchLimit,
+    Limit: queryLimit,
   };
 
   // Build the query parameters based on the geospatial configuration
+
+  // If this hash is the same precision as the partition key, perform a PK only query
   if (geospatialConfig.hashPrecision === PARTITION_KEY_HASH_PRECISION) {
     queryInput.KeyConditionExpression = 'PK = :pk';
     queryInput.ExpressionAttributeValues = {
@@ -266,6 +268,8 @@ export async function performGeospatialQueryCommand(
     };
   }
 
+  // If the hash is the longer than the partition key hash precision, but less than the GSI hash precision
+  // then perform a PK and SK query
   if (
     geospatialConfig.hashPrecision > PARTITION_KEY_HASH_PRECISION &&
     geospatialConfig.hashPrecision < GSI_HASH_PRECISION
@@ -278,6 +282,7 @@ export async function performGeospatialQueryCommand(
     };
   }
 
+  // If the hash is the same as the GSI hash precision, perform query directly against GSI1PK
   if (geospatialConfig.hashPrecision === GSI_HASH_PRECISION) {
     queryInput.KeyConditionExpression = 'GSI1PK = :pk';
     queryInput.IndexName = 'GSI1';
@@ -286,6 +291,7 @@ export async function performGeospatialQueryCommand(
     };
   }
 
+  // If the hash is the longer than the GSI hash precision, perform a query against GSI1 with the sort key
   if (geospatialConfig.hashPrecision > GSI_HASH_PRECISION) {
     const pkHash = geoHash.substring(0, GSI_HASH_PRECISION);
     queryInput.KeyConditionExpression = 'GSI1PK = :pk AND begins_with(GSI1SK, :sk)';

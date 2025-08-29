@@ -1,0 +1,69 @@
+{
+  "items": [
+    {
+      "dataTimestamp": 1756474200,
+      "visibility": "10000",
+      "lon": "-3.789",
+      "temperature": "30.0",
+      "windSpeed": "4.6",
+      "windDir": "300",
+      "recordTimestamp": 1756474553,
+      "lat": "37.19",
+      "type": "Weather"
+    },
+    {
+      "dataTimestamp": 1756474200,
+      "visibility": "10000",
+      "lon": "4.903",
+      "temperature": "21.0",
+      "windSpeed": "4.1",
+      "windDir": "300",
+      "recordTimestamp": 1756474553,
+      "lat": "43.911",
+      "type": "Weather"
+    },
+    {
+      "dataTimestamp": 1756474200,
+      "visibility": "10000",
+      "lon": "9.098",
+      "temperature": "29.0",
+      "windSpeed": "10.3",
+      "windDir": "270",
+      "recordTimestamp": 1756474553,
+      "lat": "41.501",
+      "type": "Weather"
+    },
+    {
+      "dataTimestamp": 1756474200,
+      "visibility": "10000",
+      "lon": "-0.482",
+      "temperature": "35.0",
+      "windSpeed": "2.6",
+      "recordTimestamp": 1756474553,
+      "lat": "39.489",
+      "type": "Weather"
+    },
+    {
+      "dataTimestamp": 1756474200,
+      "visibility": "8996",
+      "lon": "-1.534",
+      "temperature": "22.0",
+      "windSpeed": "11.8",
+      "windDir": "270",
+      "recordTimestamp": 1756474553,
+      "lat": "43.469",
+      "type": "Weather"
+    },
+    {
+      "dataTimestamp": 1756474200,
+      "visibility": "10000",
+      "lon": "-0.416",
+      "temperature": "18.0",
+      "windSpeed": "7.7",
+      "windDir": "260",
+      "recordTimestamp": 1756474553,
+      "lat": "43.385",
+      "type": "Weather"
+    }
+  ]
+}
