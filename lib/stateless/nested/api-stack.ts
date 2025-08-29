@@ -8,7 +8,7 @@
  */
 
 import { Construct } from 'constructs';
-import { NestedStack, NestedStackProps } from 'aws-cdk-lib';
+import { NestedStack, NestedStackProps, RemovalPolicy } from 'aws-cdk-lib';
 import { RestApi, LambdaIntegration, ApiKey, UsagePlan, ApiKeySourceType } from 'aws-cdk-lib/aws-apigateway';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { EnvironmentConfig, Stage } from '../../../config';
@@ -101,6 +101,7 @@ export class ApiResources extends NestedStack {
       logGroup: new LogGroup(this, 'ApiKeyCrLogGroup', {
         logGroupName: '/aws/api/ApiKeyCrLogGroup',
         retention: RetentionDays.THREE_MONTHS,
+        removalPolicy: RemovalPolicy.DESTROY,
       }),
       onCreate: apiKeyFetch,
       onUpdate: apiKeyFetch,

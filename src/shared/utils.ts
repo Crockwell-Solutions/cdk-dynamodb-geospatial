@@ -59,29 +59,29 @@ export function roundTo(n: any, digits: number) {
 }
 
 /**
- * Generates a random partition key prefix string for DynamoDB.
+ * Generates a random shard key prefix string for DynamoDB.
  *
  * @param prefixes - The number of possible prefix values to choose from. Defaults to 10.
  * @returns A string in the format `P{index}`, where `index` is a random integer between 1 and `prefixes`.
  */
-export function getRandomPartitionKeyPrefix(prefixes: number = 10): string {
+export function getRandomShardPrefix(prefixes: number = 10): string {
   const randomIndex = Math.floor(Math.random() * prefixes) + 1;
-  return `P${randomIndex}`;
+  return `S${randomIndex}`;
 }
 
 /**
- * Generates an array of partition key prefixes in the format "P1", "P2", ..., "Pn".
+ * Generates an array of shard key prefixes in the format "S1", "S2", ..., "Sn".
  *
- * @param prefixes - The number of partition key prefixes to generate. Defaults to 10.
- * @returns An array of partition key prefix strings.
+ * @param prefixes - The number of shard key prefixes to generate. Defaults to 10.
+ * @returns An array of shard key prefix strings.
  */
-export function getAllPartitionKeyPrefixes(prefixes: number = 10, hash: string = ''): string[] {
-  const partitionKeys: string[] = [];
+export function getAllShardPrefixes(prefixes: number = 10, hash: string = ''): string[] {
+  const shardKeys: string[] = [];
   for (let i = 1; i <= prefixes; i++) {
-    partitionKeys.push(`P${i}`);
+    shardKeys.push(`S${i}`);
   }
   if (hash) {
-    return partitionKeys.map((key) => `${key}#${hash}`);
+    return shardKeys.map((key) => `${key}#${hash}`);
   }
-  return partitionKeys;
+  return shardKeys;
 }

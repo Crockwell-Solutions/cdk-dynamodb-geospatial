@@ -12,9 +12,9 @@ import {
   logger,
   Point,
   getRouteGeoHashes,
-  //getPointsNearRoute,
   fetchGeoHashItemsFromDynamoDB,
   getRouteDistance,
+  calculateGeoHashPrecision,
   RETURN_HEADERS,
 } from '../shared';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
@@ -55,12 +55,18 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     lon: event.queryStringParameters?.lonEnd ? parseFloat(event.queryStringParameters?.lonEnd) : 0,
   };
 
+  // Step 1: Calculate the precision and index to use based on the size of the bounding box
+  const geospatialConfig = calculateGeoHashPrecision(
+    { lat: startPoint.lat, lon: startPoint.lon },
+    { lat: endPoint.lat, lon: endPoint.lon },
+  );
+
   // Step 1: Get all GeoHash prefixes covering the route
   const hashPrefixes = getRouteGeoHashes(startPoint, endPoint, PARTITION_KEY_HASH_PRECISION);
   logger.info('Geohash Prefixes intercepting the route', { count: hashPrefixes.length });
 
   // Step 2: Query DynamoDB for items in the geohashes
-  const results = await fetchGeoHashItemsFromDynamoDB(ddb, hashPrefixes);
+  const results = await fetchGeoHashItemsFromDynamoDB(ddb, hashPrefixes, geospatialConfig);
   logger.info('Queried Results from GeoHashes', { count: results.length });
 
   // Step 3: Evaluate the route

@@ -33,7 +33,7 @@
 
 import * as path from 'path';
 import { Construct } from 'constructs';
-import { Duration } from 'aws-cdk-lib';
+import { Duration, RemovalPolicy } from 'aws-cdk-lib';
 import { NodejsFunction, NodejsFunctionProps } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { LogGroup, RetentionDays } from 'aws-cdk-lib/aws-logs';
 import { Runtime, Tracing, Architecture, LoggingFormat, SystemLogLevel } from 'aws-cdk-lib/aws-lambda';
@@ -84,6 +84,7 @@ export class CustomLambda extends Construct {
     this.logGroup = new LogGroup(this, `${id}-LogGroup`, {
       logGroupName: `/aws/lambda/${props.functionName ? props.functionName : id}`,
       retention: RetentionDays.THREE_MONTHS,
+      removalPolicy: RemovalPolicy.DESTROY,
     });
 
     this.lambda = new NodejsFunction(this, id, {

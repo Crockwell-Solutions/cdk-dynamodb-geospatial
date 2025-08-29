@@ -11,13 +11,13 @@
 
 import * as geohash from 'ngeohash';
 import { GeospatialConfig, GEOSPATIAL_QUERIES } from '../../config/geospatial-config';
-import { logger, chunkArray, getAllPartitionKeyPrefixes } from '.';
+import { logger, chunkArray, getAllShardPrefixes } from '.';
 import { DynamoDBDocumentClient, QueryCommand } from '@aws-sdk/lib-dynamodb';
 import { getDistance, getRhumbLineBearing, computeDestinationPoint, getDistanceFromLine } from 'geolib';
 
 const SPATIAL_DATA_TABLE = process.env.SPATIAL_DATA_TABLE;
 const PARTITION_KEY_HASH_PRECISION = parseInt(process.env.PARTITION_KEY_HASH_PRECISION || '1');
-const PARTITION_KEY_PREFIXES = parseInt(process.env.PARTITION_KEY_PREFIXES || '10');
+const PARTITION_KEY_SHARDS = parseInt(process.env.PARTITION_KEY_SHARDS || '10');
 const GSI_HASH_PRECISION = parseInt(process.env.GSI_HASH_PRECISION || '4');
 const MAXIMUM_DYNAMODB_RECORDS = parseInt(process.env.MAXIMUM_DYNAMODB_RECORDS || '100');
 
@@ -43,7 +43,7 @@ export function getBoundingBoxGeoHashes(boundingBox: BoundingBox, geospatialConf
   if (geospatialConfig.index === 'primary') {
     const primaryIndexHashes = [];
     for (const hash of hashes) {
-      primaryIndexHashes.push(...getAllPartitionKeyPrefixes(PARTITION_KEY_PREFIXES, hash));
+      primaryIndexHashes.push(...getAllShardPrefixes(PARTITION_KEY_SHARDS, hash));
     }
     logger.debug(`Generated ${primaryIndexHashes.length} geohashes indexes for bounding box`, { primaryIndexHashes });
     return primaryIndexHashes;

@@ -26,7 +26,7 @@ export interface EnvironmentConfig {
   apiKeyParameterName?: string;
   spatialDataTableName?: string;
   partitionKeyHashPrecision?: number;
-  partitionKeyPrefixes?: number;
+  partitionKeyShards?: number;
   sortKeyHashPrecision?: number;
   gsiHashPrecision?: number;
   maximumResponseRecords?: number;
@@ -53,7 +53,7 @@ const defaultConfig: EnvironmentConfig = {
   apiKeyParameterName: '/dynamoDbGeospatial/apiKey',
   spatialDataTableName: 'SpatialDataTable',
   partitionKeyHashPrecision: 1, // Approx 1000km resolution for partitioning
-  partitionKeyPrefixes: 10, // Number of prefixes for allocating into random partitions
+  partitionKeyShards: 10, // Number of shards for allocating into random shards within the partition
   sortKeyHashPrecision: 8, // Approx 50m resolution for sorting
   gsiHashPrecision: 4, // Approx 40km resolution for GSI partitioning
   maximumResponseRecords: 100, // Total maximum responses in an API query

@@ -39,7 +39,7 @@ export class LambdaResources extends NestedStack {
         WEATHER_DATA_SOURCE_URL: envConfig.weatherDataSourceUrl,
         WEATHER_DATA_TTL_SECONDS: envConfig.weatherDataTtlSeconds?.toString(),
         PARTITION_KEY_HASH_PRECISION: envConfig.partitionKeyHashPrecision?.toString(),
-        PARTITION_KEY_PREFIXES: envConfig.partitionKeyPrefixes?.toString(),
+        PARTITION_KEY_SHARDS: envConfig.partitionKeyShards?.toString(),
         SORT_KEY_HASH_PRECISION: envConfig.sortKeyHashPrecision?.toString(),
         GSI_HASH_PRECISION: envConfig.gsiHashPrecision?.toString(),
       },
@@ -53,7 +53,7 @@ export class LambdaResources extends NestedStack {
       environmentVariables: {
         SPATIAL_DATA_TABLE: spatialDataTable.tableName,
         PARTITION_KEY_HASH_PRECISION: envConfig.partitionKeyHashPrecision?.toString(),
-        PARTITION_KEY_PREFIXES: envConfig.partitionKeyPrefixes?.toString(),
+        PARTITION_KEY_SHARDS: envConfig.partitionKeyShards?.toString(),
         SORT_KEY_HASH_PRECISION: envConfig.sortKeyHashPrecision?.toString(),
         GSI_HASH_PRECISION: envConfig.gsiHashPrecision?.toString(),
         MAXIMUM_DYNAMODB_RECORDS: envConfig.maximumResponseRecords?.toString(),
@@ -68,7 +68,7 @@ export class LambdaResources extends NestedStack {
       environmentVariables: {
         SPATIAL_DATA_TABLE: spatialDataTable.tableName,
         PARTITION_KEY_HASH_PRECISION: envConfig.partitionKeyHashPrecision?.toString(),
-        PARTITION_KEY_PREFIXES: envConfig.partitionKeyPrefixes?.toString(),
+        PARTITION_KEY_SHARDS: envConfig.partitionKeyShards?.toString(),
         SORT_KEY_HASH_PRECISION: envConfig.sortKeyHashPrecision?.toString(),
         GSI_HASH_PRECISION: envConfig.gsiHashPrecision?.toString(),
         MAXIMUM_DYNAMODB_RECORDS: envConfig.maximumResponseRecords?.toString(),

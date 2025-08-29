@@ -9,10 +9,10 @@
  */
 
 import * as geohash from 'ngeohash';
-import { isNumeric, roundTo, getRandomPartitionKeyPrefix } from '../shared';
+import { isNumeric, roundTo, getRandomShardPrefix } from '../shared';
 
 const PARTITION_KEY_HASH_PRECISION = parseInt(process.env.PARTITION_KEY_HASH_PRECISION || '1');
-const PARTITION_KEY_PREFIXES = parseInt(process.env.PARTITION_KEY_PREFIXES || '10');
+const PARTITION_KEY_SHARDS = parseInt(process.env.PARTITION_KEY_SHARDS || '10');
 const SORT_KEY_HASH_PRECISION = parseInt(process.env.SORT_KEY_HASH_PRECISION || '8');
 const GSI_HASH_PRECISION = parseInt(process.env.GSI_HASH_PRECISION || '4');
 
@@ -102,8 +102,8 @@ export class WeatherReport {
     }
 
     return {
-      // PK represents the partition key for the item: Random partition key prefix + geohash of the lat/lon
-      PK: `${getRandomPartitionKeyPrefix(PARTITION_KEY_PREFIXES)}#${geohash.encode(this.lat, this.lon, PARTITION_KEY_HASH_PRECISION)}`,
+      // PK represents the partition key for the item: Random shard key prefix + geohash of the lat/lon
+      PK: `${getRandomShardPrefix(PARTITION_KEY_SHARDS)}#${geohash.encode(this.lat, this.lon, PARTITION_KEY_HASH_PRECISION)}`,
       SK: geohash.encode(this.lat, this.lon, SORT_KEY_HASH_PRECISION),
       GSI1PK: geohash.encode(this.lat, this.lon, GSI_HASH_PRECISION),
       GSI1SK: geohash.encode(this.lat, this.lon, SORT_KEY_HASH_PRECISION),
