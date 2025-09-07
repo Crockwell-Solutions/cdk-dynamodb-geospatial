@@ -3,7 +3,6 @@ import { Marker } from 'react-leaflet';
 import L from 'leaflet';
 import { WeatherData } from '../types/weather';
 import TemperatureIcon from './TemperatureIcon';
-import WindArrow from './WindArrow';
 
 interface WeatherMarkersProps {
   weatherData: WeatherData[];
@@ -26,21 +25,6 @@ const WeatherMarkers: React.FC<WeatherMarkersProps> = ({ weatherData }) => {
                 iconAnchor: [30, 30]
               })}
             />
-            
-            {station.windSpeed && station.windDir && (
-              <Marker
-                position={position}
-                icon={L.divIcon({
-                  html: `<div>${WindArrow({ 
-                    windSpeed: station.windSpeed, 
-                    windDir: station.windDir 
-                  })}</div>`,
-                  className: 'wind-marker',
-                  iconSize: [40, 40],
-                  iconAnchor: [20, 20]
-                })}
-              />
-            )}
           </React.Fragment>
         );
       })}

@@ -1,5 +1,5 @@
 {
-  "name": "drone-planner-frontend",
+  "name": "dynamodb-geospatial-frontend",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
