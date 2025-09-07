@@ -98,6 +98,13 @@ Following deployment, the frontend application will be available at the CloudFro
 
 The frontend application is built using React and Tailwind CSS, providing a interactive user interface for visualizing points of interest. This has been built for the purposes of demonstrating the system backend and is not intended for production use. It has the following features:
 
+- **Interactive Map**: Built with React Leaflet for smooth map interactions
+- **Temperature Visualization**: Color-coded circular icons showing temperature values
+- **Real-time Data**: Fetches weather data from the backend API
+
+
+The app will connect to the deployed backend API using configuration from `src/cdk-output.json`.
+
 To run locally:
 ```bash
 cd frontend

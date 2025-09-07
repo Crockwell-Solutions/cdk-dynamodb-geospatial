@@ -96,14 +96,14 @@ const WeatherMap: React.FC<MapViewProps> = ({ apiBaseUrl, apiKey }) => {
         <MapEvents />
       </MapContainer>
 
-      <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm rounded-lg p-4 shadow-lg z-[1000]">
-        <h1 className="text-xl font-bold text-slate-800 mb-2">Weather Visualization</h1>
+      <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-lg p-4 shadow-lg z-[1000]">
+        <h1 className="text-xl font-bold text-slate-800 mb-2">Geospatial Data Demonstrator</h1>
         {loading && <div className="text-blue-600 text-sm">Loading...</div>}
         {error ? (
           <div className="text-red-600 text-sm">Error: {error}</div>
         ) : (
           <div className="text-sm text-slate-600">
-            {weatherData.length} weather stations
+            {weatherData.length} weather stations loaded
           </div>
         )}
       </div>
