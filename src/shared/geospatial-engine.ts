@@ -104,7 +104,21 @@ export function getRouteGeoHashes(
     hashes.forEach((h) => geoHashes.add(h));
   }
 
-  return Array.from(geoHashes);
+  const hashes = Array.from(geoHashes);
+
+  // If this is the main DynamoDB partition (not the GSI), add the prefixes to the hashes
+  if (geospatialConfig.index === 'primary') {
+    const primaryIndexHashes = [];
+    for (const hash of hashes) {
+      primaryIndexHashes.push(...getAllShardPrefixes(PARTITION_KEY_SHARDS, hash));
+    }
+    logger.debug(`Using primary index with ${primaryIndexHashes.length} geohashes for bounding box`, {
+      primaryIndexHashes,
+    });
+    return primaryIndexHashes;
+  }
+
+  return hashes;
 }
 
 /**

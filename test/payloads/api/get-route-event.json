@@ -21,23 +21,23 @@
     "X-Forwarded-Proto": "https"
   },
   "queryStringParameters": {
-    "latStart": 51.111,
-    "lonStart": -0.982,
-    "latEnd": 51.313,
-    "lonEnd": -0.4666
+    "latStart": 47.627,
+    "lonStart": -2.845,
+    "latEnd": 52.751,
+    "lonEnd": 5.712
   },
   "multiValueQueryStringParameters": {
-    "latMax": [
-      "51.313"
+    "latStart": [
+      "47.627"
     ],
-    "latMin": [
-      "51.211"
+    "lonStart": [
+      "-2.845"
     ],
-    "lonMax": [
-      "-0.4666"
+    "latEnd": [
+      "52.751"
     ],
-    "lonMin": [
-      "-0.782"
+    "lonEnd": [
+      "5.712"
     ]
   },
   "pathParameters": null,
