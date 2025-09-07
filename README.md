@@ -18,17 +18,20 @@ A sample CDK Typescript Project that demonstrates the use of AWS services for ge
   - [💻 Frontend Application](#-frontend-application)
   - [🛠 Backend Application](#-backend-application)
     - [Local Development and Debugging](#local-development-and-debugging)
-    - [Testing](#testing)
   - [🚢 Deployment](#-deployment)
   - [🌐 Backend REST API](#-backend-rest-api)
   - [💰 Costs](#-costs)
   - [🗑️ Cleanup](#️-cleanup)
   - [📊 Data Sources](#-data-sources)
-    - [Airport Data](#airport-data)
+    - [Weather data](#weather-data)
   - [📄 License](#-license)
 
 ## 🎯 Overview
 
+This project demonstrates a serverless application built with AWS CDK (in Typescript) that processes and visualizes geospatial data using various AWS services. The application includes:
+- A React-based frontend application for visualizing points of interest on a map
+- A backend API built with AWS Lambda and API Gateway for handling geospatial queries
+- DynamoDB for storing geospatial data and enabling efficient querying
 
 ## 🏗 Architecture
 
@@ -124,19 +127,13 @@ For VSCode users, the launch configurations are provided in `.vscode/launch.json
 
 1. Install AWS SAM CLI
 2. Ensure the backend is deployed at least once to create the necessary resources (see [Deployment](#-deployment) section)
-3. Create a `local.env.json` file in the root of the project, based on the parameters in the `local.env.example.json` file. This file should contain the environment variables required for local development, such as API keys and DynamoDB table names.
+3. Modify the `local.env.json` file in the root of the project. This file should contain the environment variables required for local development, such as API keys and DynamoDB table names.
 4. Use VSCode debugging configurations in `.vscode/launch.json`
 5. Run Lambda functions locally for testing
 
-### Testing
-```bash
-npm run test    # Run unit tests
-npm run lint    # Run linting
-```
-
 ## 🚢 Deployment
 
-The project uses the awesome CDK project (in Typescript) for infrastructure definition and deployment.
+The project uses CDK project (in Typescript) for infrastructure definition and deployment.
 
 The deployment is split into two CDK projects:
 - **Backend**: Contains the stateless and stateful stacks. The command `npm run deploy:backend` will deploy the backend CDK stacks. Following completion of the backend deployment, it will output the necessary API Gateway endpoint URLs to the `cdk-output.json` file in the `frontend/src` directory. This file is used by the frontend application to connect to the backend API.
@@ -184,8 +181,10 @@ npm run destroy
 
 ## 📊 Data Sources
 
-### Airport Data
-- [OpenFlights Airports Database](https://openflights.org/data.html)
+### Weather data
+Weather data is sourced from National Oceanic and Atmospheric Administration (NOAA) and covers a global dataset of Weather Data from Airfields (METARs).
+- Coverage: Global
+- License: Commercial and non-commercial use permitted
 
 ## 📄 License
 
