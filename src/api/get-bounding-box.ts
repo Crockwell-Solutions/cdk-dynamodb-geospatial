@@ -3,7 +3,7 @@
  *
  * This Lambda function is triggered by API Gateway to get locations of interest within a specified bounding box.
  * This is used to display items on the map view
- * It use the most efficient index from the DynamoDB table, based on the size of the bounding box.
+ * It uses the most efficient index from the DynamoDB table, based on the size of the bounding box.
  *
  * This software is licensed under the Apache License, Version 2.0 (the "License");
  */

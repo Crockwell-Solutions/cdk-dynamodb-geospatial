@@ -102,7 +102,7 @@
         "target": "code",
         "architecture": "arm64",
         "projectRoot": "dist",
-        "lambdaHandler": "api/route.handler"
+        "lambdaHandler": "api/get-route.handler"
       },
       "lambda": {
         "runtime": "nodejs22.x",

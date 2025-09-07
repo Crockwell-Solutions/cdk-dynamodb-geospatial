@@ -62,7 +62,7 @@ export function getBoundingBoxGeoHashes(boundingBox: BoundingBox, geospatialConf
  *
  * @param start - The starting geographic point with latitude and longitude.
  * @param end - The ending geographic point with latitude and longitude.
- * @param precision - The number of characters in the geohash (default is 5).
+ * @param geospatialConfig - The geospatial configuration that includes the precision for the geohashes.
  * @param stepMeters - The distance in meters between each computed geohash along the route (default is 100).
  * @param bufferMeters - The buffer distance in meters around the route to include additional geohashes (default is 10,000).
  * @returns An array of unique geohash strings covering the route from start to end.
@@ -70,7 +70,7 @@ export function getBoundingBoxGeoHashes(boundingBox: BoundingBox, geospatialConf
 export function getRouteGeoHashes(
   start: Point,
   end: Point,
-  precision = 5,
+  geospatialConfig: GeospatialConfig,
   stepMeters = 1000, // 1km spacing for performance
   bufferMeters = 10000,
 ): string[] {
@@ -80,8 +80,8 @@ export function getRouteGeoHashes(
   const geoHashes = new Set<string>();
 
   // Always include start and end
-  geoHashes.add(geohash.encode(start.lat, start.lon, precision));
-  geoHashes.add(geohash.encode(end.lat, end.lon, precision));
+  geoHashes.add(geohash.encode(start.lat, start.lon, geospatialConfig.hashPrecision));
+  geoHashes.add(geohash.encode(end.lat, end.lon, geospatialConfig.hashPrecision));
 
   const bearing = getRhumbLineBearing(start, end);
   const steps = Math.floor(routeLength / stepMeters);
@@ -98,7 +98,7 @@ export function getRouteGeoHashes(
       point.longitude - lonBuffer,
       point.latitude + latBuffer,
       point.longitude + lonBuffer,
-      precision,
+      geospatialConfig.hashPrecision,
     );
 
     hashes.forEach((h) => geoHashes.add(h));
@@ -109,19 +109,16 @@ export function getRouteGeoHashes(
 
 /**
  * Returns an array of geo points that are near the route defined by the start and end points.
- *
- * - For points of type `'Population'`, only those within 500 meters of the route are included.
- * - For points of type `'Weather'`, only those within 20,000 meters of the route are included.
+ * Points within 10,000 meters of the route are included.
  *
  * @param start - The starting point of the route.
  * @param end - The ending point of the route.
  * @param geoPoints - An array of geo points to check, each expected to have `lat`, `lon`, and `type` properties.
+ * @param bufferMeters - The maximum distance in meters from the route to consider a point as "near" (default is 10,000 meters).
  * @returns An array of geo points that are near the route according to their type-specific distance thresholds.
  */
-export function getPointsNearRouteSegment(start: Point, end: Point, geoPoints: Array<any>): Array<any> {
+export function getPointsNearRoute(start: Point, end: Point, geoPoints: Array<any>, bufferMeters = 10000): Array<any> {
   const results: Array<any> = [];
-  const populationDistanceThreshold = 500; // Distance in meters
-  const weatherDistanceThreshold = 20000; // Distance in meters
 
   const routeLength = getDistance(start, end); // in meters
   logger.debug(`Route length from start to end: ${routeLength} meters`, { start, end });
@@ -133,42 +130,14 @@ export function getPointsNearRouteSegment(start: Point, end: Point, geoPoints: A
         { latitude: start.lat, longitude: start.lon },
         { latitude: end.lat, longitude: end.lon },
       );
-      //logger.debug(`Distance from point to route: ${distance} meters`, { point });
-
-      if (distance <= populationDistanceThreshold && point.type === 'Population') {
-        results.push(point);
-      }
-      if (distance <= weatherDistanceThreshold && point.type === 'Weather') {
+      logger.debug(`Distance from point to route: ${distance} meters`, { point });
+      if (distance <= bufferMeters) {
         results.push(point);
       }
     }
   }
 
   return results;
-}
-
-/**
- * Finds and returns all geoPoints that are near any segment of a given route.
- *
- * Iterates through each consecutive pair of points in the `routePoints` array,
- * and for each segment, finds geoPoints that are near that segment using
- * `getPointsNearRouteSegment`. The results are deduplicated based on latitude and longitude.
- *
- * @param routePoints - An array of route points representing the path (each point should have at least `lat` and `lon` properties).
- * @param geoPoints - An array of geoPoints to check for proximity to the route segments.
- * @returns An array of geoPoints that are near any segment of the route, with duplicates removed.
- */
-export function getPointsNearRoute(routePoints: Array<Point>, geoPoints: Array<any>): Array<any> {
-  const results: Array<any> = [];
-  for (let i = 0; i < routePoints.length - 1; i++) {
-    const segmentStart = routePoints[i];
-    const segmentEnd = routePoints[i + 1];
-    const segmentPoints = getPointsNearRouteSegment(segmentStart, segmentEnd, geoPoints);
-    results.push(...segmentPoints);
-  }
-  // Remove duplicates based on a unique identifier (e.g., lat, lon)
-  const uniqueResults = Array.from(new Map(results.map((item) => [`${item.lat},${item.lon}`, item])).values());
-  return uniqueResults;
 }
 
 /**
