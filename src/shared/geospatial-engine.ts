@@ -10,7 +10,6 @@
  */
 
 import * as geohash from 'ngeohash';
-import { randomInt } from 'crypto';
 import { GeospatialConfig, GEOSPATIAL_QUERIES } from '../../config/geospatial-config';
 import { logger, chunkArray, getAllShardPrefixes } from '.';
 import { DynamoDBDocumentClient, QueryCommand } from '@aws-sdk/lib-dynamodb';
@@ -345,11 +344,11 @@ export async function getRouteDistance(routePoints: Array<Point>): Promise<numbe
 function randomSample<T>(arr: T[], n: number): T[] {
   if (n >= arr.length) return [...arr];
   const result: T[] = [];
-  const taken = new Set<number>();
+  const indices = new Set<number>();
   while (result.length < n) {
-    const idx = randomInt(0, arr.length);
-    if (!taken.has(idx)) {
-      taken.add(idx);
+    const idx = Math.floor(Math.random() * arr.length);
+    if (!indices.has(idx)) {
+      indices.add(idx);
       result.push(arr[idx]);
     }
   }
@@ -357,37 +356,53 @@ function randomSample<T>(arr: T[], n: number): T[] {
 }
 
 /**
- * Distribute a set of points evenly across their geohash cells.
+ * Distribute a set of points evenly across a spatial grid.
  *
- * @param points The dataset of points (must include a geoHash field).
- * @param precision The precision of the geohash to use for grouping.
+ * @param points The dataset of points (must include lat and lon fields).
  * @param limit  The max number of points to return.
  */
-export function getDistributedPoints<T extends { geoHash: string }>(
-  points: T[],
-  precision: number,
-  limit: number,
-): T[] {
+export function getDistributedPoints<T extends { lat: number; lon: number }>(points: T[], limit: number): T[] {
   if (points.length <= limit) return [...points];
 
-  // Group by geohash
-  const grouped: Record<string, T[]> = {};
-  const geoHash = (p: T) => p.geoHash.substring(0, precision);
-  for (const p of points) {
-    if (!grouped[geoHash(p)]) grouped[geoHash(p)] = [];
-    grouped[geoHash(p)].push(p);
+  // Find bounds
+  const lats = points.map((p) => p.lat);
+  const lons = points.map((p) => p.lon);
+  const minLat = Math.min(...lats);
+  const maxLat = Math.max(...lats);
+  const minLon = Math.min(...lons);
+  const maxLon = Math.max(...lons);
+
+  // Create spatial grid
+  const gridSize = Math.ceil(Math.sqrt(limit));
+  const latStep = (maxLat - minLat) / gridSize;
+  const lonStep = (maxLon - minLon) / gridSize;
+
+  // Group points by grid cell
+  const grid: Record<string, T[]> = {};
+  for (const point of points) {
+    const gridLat = Math.floor((point.lat - minLat) / latStep);
+    const gridLon = Math.floor((point.lon - minLon) / lonStep);
+    const key = `${gridLat},${gridLon}`;
+    if (!grid[key]) grid[key] = [];
+    grid[key].push(point);
   }
 
-  const groups = Object.values(grouped);
+  // Sample from each grid cell
+  const cells = Object.values(grid);
+  const pointsPerCell = Math.max(1, Math.floor(limit / cells.length));
+  const result: T[] = [];
 
-  // Distribute sampling quota equally across groups
-  const perGroup = Math.max(1, Math.floor(limit / groups.length));
-
-  let sampled: T[] = [];
-  for (const group of groups) {
-    sampled = sampled.concat(randomSample(group, perGroup));
+  for (const cell of cells) {
+    const take = Math.min(pointsPerCell, cell.length);
+    result.push(...randomSample(cell, take));
   }
 
-  // If we undershoot/overshoot, fix with a final random sample
-  return randomSample(sampled.length > limit ? sampled : points, limit);
+  // Fill remaining quota from unused points
+  if (result.length < limit) {
+    const remaining = limit - result.length;
+    const unused = points.filter((p) => !result.includes(p));
+    result.push(...randomSample(unused, remaining));
+  }
+
+  return result.slice(0, limit);
 }

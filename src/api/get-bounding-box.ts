@@ -88,7 +88,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 
   // Step 5: Only return up to the queryLimit number of records, making sure we take a random selection
   // across each of the geohashes to ensure a good distribution of results
-  const distributedResults = getDistributedPoints(filteredResults, geospatialConfig.distributionPrecision, queryLimit);
+  const distributedResults = getDistributedPoints(filteredResults, queryLimit);
 
   return {
     body: JSON.stringify({
