@@ -40,9 +40,6 @@ The platform consists of two main components:
 - **Frontend**: React-based web application served via CloudFront. Deployed with AWS CDK.
 - **Backend**: Serverless API built with AWS Lambda and API Gateway, using DynamoDB for data storage and event driven architecture for real-time updates. Deployed with AWS CDK.
 
-The overall architecture is shown below:
-![Architecture Diagram](resources/images/architecture.png)
-
 AWS services consist of:
 - AWS Lambda for serverless compute
 - Amazon DynamoDB for data storage and event-driven architecture
