@@ -23,8 +23,7 @@ export class WeatherReport {
   isValid: boolean = true;
   lat: number;
   lon: number;
-  lowPrecisionGeohash: string;
-  highPrecisionGeohash: string;
+  geoHash: string;
   dataTimestamp: number;
   recordTimestamp: number;
   ttl: number;
@@ -42,7 +41,7 @@ export class WeatherReport {
   constructor(metar: any) {
     // Run some validation checks on the data
     this.isValid = true;
-    if (metar['latitude'] && metar['longitude']) {
+    if (metar['latitude'] && metar['longitude'] && metar['temp_c']) {
       if (isNumeric(metar['latitude'][0])) {
         if (metar['latitude'][0] < -90 || metar['latitude'][0] > 90) this.isValid = false;
       } else {
@@ -50,6 +49,11 @@ export class WeatherReport {
       }
       if (isNumeric(metar['longitude'][0])) {
         if (metar['longitude'][0] < -180 || metar['longitude'][0] > 180) this.isValid = false;
+      } else {
+        this.isValid = false;
+      }
+      if (isNumeric(metar['temp_c'][0])) {
+        if (metar['temp_c'][0] < -100 || metar['temp_c'][0] > 100) this.isValid = false;
       } else {
         this.isValid = false;
       }
@@ -101,12 +105,14 @@ export class WeatherReport {
       return undefined;
     }
 
+    const fullGeoHash = geohash.encode(this.lat, this.lon, SORT_KEY_HASH_PRECISION);
     return {
       // PK represents the partition key for the item: Random shard key prefix + geohash of the lat/lon
       PK: `${getRandomShardPrefix(PARTITION_KEY_SHARDS)}#${geohash.encode(this.lat, this.lon, PARTITION_KEY_HASH_PRECISION)}`,
-      SK: geohash.encode(this.lat, this.lon, SORT_KEY_HASH_PRECISION),
+      SK: fullGeoHash,
       GSI1PK: geohash.encode(this.lat, this.lon, GSI_HASH_PRECISION),
-      GSI1SK: geohash.encode(this.lat, this.lon, SORT_KEY_HASH_PRECISION),
+      GSI1SK: fullGeoHash,
+      geoHash: fullGeoHash,
       lat: this.lat,
       lon: this.lon,
       type: 'Weather',

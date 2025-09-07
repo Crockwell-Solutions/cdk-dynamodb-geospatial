@@ -10,6 +10,7 @@
  */
 
 import * as geohash from 'ngeohash';
+import { randomInt } from 'crypto';
 import { GeospatialConfig, GEOSPATIAL_QUERIES } from '../../config/geospatial-config';
 import { logger, chunkArray, getAllShardPrefixes } from '.';
 import { DynamoDBDocumentClient, QueryCommand } from '@aws-sdk/lib-dynamodb';
@@ -44,7 +45,9 @@ export function getBoundingBoxGeoHashes(boundingBox: BoundingBox, geospatialConf
     for (const hash of hashes) {
       primaryIndexHashes.push(...getAllShardPrefixes(PARTITION_KEY_SHARDS, hash));
     }
-    logger.debug(`Generated ${primaryIndexHashes.length} geohashes indexes for bounding box`, { primaryIndexHashes });
+    logger.debug(`Using primary index with ${primaryIndexHashes.length} geohashes for bounding box`, {
+      primaryIndexHashes,
+    });
     return primaryIndexHashes;
   }
 
@@ -215,8 +218,8 @@ export async function fetchGeoHashItemsFromDynamoDB(
   queryLimit: number,
 ): Promise<any[]> {
   const results: any[] = [];
-  // Calculate the fetch limit based on the number of hashes and the total fetch limit
-  const fetchLimit = Math.max(Math.ceil((queryLimit / geoHashes.length) * 2), 10);
+  // Calculate the fetch limit based on the provided query limit and the geospatial config multiplier
+  const fetchLimit = Math.max(Math.ceil(queryLimit * geospatialConfig.fetchLimitMultiplier), 10);
   // Process the DynamoDB queries in parallel in chunks of 50
   const chunks = chunkArray(geoHashes, 50);
   for (const chunk of chunks) {
@@ -328,4 +331,63 @@ export async function getRouteDistance(routePoints: Array<Point>): Promise<numbe
     return acc + getDistance(routePoints[i - 1], point);
   }, 0);
   return distance;
+}
+
+/**
+ * Returns a random sample of `n` unique elements from the given array.
+ * If `n` is greater than or equal to the array's length, returns a shallow copy of the entire array.
+ *
+ * @typeParam T - The type of elements in the array.
+ * @param arr - The array to sample from.
+ * @param n - The number of unique elements to sample.
+ * @returns An array containing `n` randomly selected unique elements from `arr`.
+ */
+function randomSample<T>(arr: T[], n: number): T[] {
+  if (n >= arr.length) return [...arr];
+  const result: T[] = [];
+  const taken = new Set<number>();
+  while (result.length < n) {
+    const idx = randomInt(0, arr.length);
+    if (!taken.has(idx)) {
+      taken.add(idx);
+      result.push(arr[idx]);
+    }
+  }
+  return result;
+}
+
+/**
+ * Distribute a set of points evenly across their geohash cells.
+ *
+ * @param points The dataset of points (must include a geoHash field).
+ * @param precision The precision of the geohash to use for grouping.
+ * @param limit  The max number of points to return.
+ */
+export function getDistributedPoints<T extends { geoHash: string }>(
+  points: T[],
+  precision: number,
+  limit: number,
+): T[] {
+  if (points.length <= limit) return [...points];
+
+  // Group by geohash
+  const grouped: Record<string, T[]> = {};
+  const geoHash = (p: T) => p.geoHash.substring(0, precision);
+  for (const p of points) {
+    if (!grouped[geoHash(p)]) grouped[geoHash(p)] = [];
+    grouped[geoHash(p)].push(p);
+  }
+
+  const groups = Object.values(grouped);
+
+  // Distribute sampling quota equally across groups
+  const perGroup = Math.max(1, Math.floor(limit / groups.length));
+
+  let sampled: T[] = [];
+  for (const group of groups) {
+    sampled = sampled.concat(randomSample(group, perGroup));
+  }
+
+  // If we undershoot/overshoot, fix with a final random sample
+  return randomSample(sampled.length > limit ? sampled : points, limit);
 }

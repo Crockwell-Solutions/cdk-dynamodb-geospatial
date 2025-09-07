@@ -16,6 +16,7 @@ import {
   getBoundingBoxGeoHashes,
   calculateGeoHashPrecision,
   fetchGeoHashItemsFromDynamoDB,
+  getDistributedPoints,
   RETURN_HEADERS,
 } from '../shared';
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
@@ -85,13 +86,14 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     .map(({ PK, SK, GSI1PK, GSI1SK, ttl, ...rest }) => rest);
   logger.info('Filtered Results within Bounding Box', { count: filteredResults.length });
 
-  // Step 5: Only return up to the queryLimit number of records
-  const returnRecords = filteredResults.slice(0, queryLimit);
+  // Step 5: Only return up to the queryLimit number of records, making sure we take a random selection
+  // across each of the geohashes to ensure a good distribution of results
+  const distributedResults = getDistributedPoints(filteredResults, geospatialConfig.distributionPrecision, queryLimit);
 
   return {
     body: JSON.stringify({
-      items: returnRecords,
-      count: returnRecords.length,
+      items: distributedResults,
+      count: distributedResults.length,
     }),
     ...RETURN_HEADERS,
   };
